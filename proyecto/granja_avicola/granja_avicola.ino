@@ -2,6 +2,12 @@
 #include <DHT.h>
 SoftwareSerial BT1(4, 3); // RX | TX
 
+boolean retorno = false;
+
+////////////////////////////////////sim900///////////
+SoftwareSerial SIM900(7, 8);
+
+
 /////////////////////////////////// configuracion inicial sensor temperatura y humedad ////////////////////////////////
 
 // Definimos el pin digital donde se conecta el sensor
@@ -21,10 +27,39 @@ int pinsensormq135 = 0;
 
 void setup()
 {
-
   Serial.begin(115200);
   dht.begin();
   BT1.begin(115200);
+  SIM900.begin(19200);  //Configura velocidad del puerto serie para el SIM900
+  Serial.begin(19200);  //Configura velocidad del puerto serie del Arduino
+  conectarwifi();
+  delay(10000);
+  conectardatosSIM();
+  delay(10000);
+}
+
+
+void loop()
+{
+  int amoniaco = sensormq135();
+  int temperatura = calcularTemperatura();
+  int humedad = CalcularHumedad();
+  enviarDatoWIFI(temperatura, humedad, amoniaco);
+  //if (enviarDatoWIFI(temperatura, humedad, amoniaco)) {
+  //Serial.println("SE GUARDO POR WIFI");
+  //retorno = false;
+  //}
+  //else {
+  //while (retorno == false) {
+  enviardatosSIM();
+  //}
+  //Serial.println("SE GUARDO POR SIM");
+  //retorno = false;
+  //}
+  delay(60000);
+}
+
+void conectarwifi() {
   BT1.println("AT+RST");
   BT1.setTimeout(2000);
   BT1.println("AT");
@@ -33,7 +68,7 @@ void setup()
     Serial.println("Respuesta AT correcto");
   else
     Serial.println("Error en ESP8266");
-  BT1.println("AT+CWJAP=\"Cesar\",\"Cesar123\"");
+  BT1.println("AT+CWJAP=\"Movistar_22160435\",\"00929329818\"");
   BT1.setTimeout(10000);
   if (BT1.find("OK"))
     Serial.println("WIFI conectado");
@@ -41,21 +76,117 @@ void setup()
     Serial.println("Error al conectarse en la red");
 }
 
-void loop()
-{
-  int amoniaco = sensormq135();
-  int temperatura = calcularTemperatura();
-  int humedad = CalcularHumedad();
-  enviarDato(temperatura,humedad,amoniaco);
-  //delay(900000);
+////////////////////////////////////////////////////////////////////////
+void conectardatosSIM() {
+
+  SIM900.println("AT");
+  delay(3000);
+  if (SIM900.find(("OK")))
+    Serial.println("Respuesta AT correcto");
+  else
+    Serial.println("Error en COMANDO AT");
+
+  SIM900.println("AT+CPIN=\"0000\"");  //Comando AT para introducir el PIN de la tarjeta
+  delay(1000);  //Tiempo para que encuentre una RED
+  if (SIM900.find(("OK")))
+    Serial.println("Respuesta AT correcto");
+  else
+    Serial.println("Error en COMANDO AT+CPIN");
 }
 
-void enviarDato(int temperatura,int humedad, int amoniaco)
+void enviardatosSIM() {
+  SIM900.println("AT+CGATT=1");
+  delay(1000);
+  if (SIM900.find(("OK")))
+    Serial.println("Respuesta AT+CGATT correcto");
+  else
+    Serial.println("Error en COMANDO AT+CGATT");
+
+  SIM900.println("AT+CSTT=\"internet.comcel.com.co\",\"comcel\",\"comcel\"");
+  delay(3000);
+  if (SIM900.find(("OK")))
+    Serial.println("Respuesta AT+CSTT correcto");
+  else
+    Serial.println("Error en COMANDO AT+CSTT");
+
+  SIM900.println("AT+CIICR");
+  delay(3000);
+  if (SIM900.find(("OK")))
+    Serial.println("Respuesta AT+CIICR correcto");
+  else
+    Serial.println("Error en COMANDO AT+CIICR");
+
+
+  SIM900.println("AT+CIFSR");//ip
+  delay(3000);
+
+
+
+  SIM900.println("AT+CIPSTART=\"TCP\",\"www.tepremiapp.com\",\"80\"");
+  delay(5000);
+  if (SIM900.find(("CONNECT OK")))
+    Serial.println("Respuesta AT+CIPSTART correcto");
+  else
+    Serial.println("Error en COMANDO AT+CIPSTART");
+  char direccion[] = "GET /sensor/datos.php?temperatura=1&humedad=2&amoniaco=3 HTTP/1.1\r\nHost: www.tepremiapp.com\r\nConnection: close\r\n\r\n";
+  char aux_str[50];
+
+  sprintf(aux_str, "AT+CIPSEND=%d", strlen(direccion));
+  Serial.println(strlen(direccion));
+
+
+  SIM900.println(aux_str);
+  delay(5000);
+  if (SIM900.find((">")))
+    Serial.println("Respuesta AT+CIPSEND correcto");
+  else
+    Serial.println("Error en COMANDO AT+CIPSEND");
+
+  SIM900.println(direccion);
+  if (SIM900.find(("HTTP/1.1 200 OK"))) {
+    Serial.println("ENVIADO CORRECTAMENTE");
+    retorno = true;
+  }
+
+  else
+    Serial.println("NO SE ENVIO");
+
+  SIM900.println("AT+CIPCLOSE");
+  delay(10000);
+  if (SIM900.find(("CLOSE OK")))
+    Serial.println("Respuesta AT+CIPCLOSE correcto");
+  else
+    Serial.println("Error en COMANDO AT+CIPCLOSE");
+
+  SIM900.println("AT+CIPSHUT");
+  delay(10000);
+  if (SIM900.find(("OK")))
+    Serial.println("Respuesta AT+CIPSHUT correcto");
+  else
+    Serial.println("Error en COMANDO AT+CIPSHUT");
+
+  SIM900.println("AT+CGATT=0");
+  delay(1000);
+  if (SIM900.find(("OK")))
+    Serial.println("Respuesta AT+CGATT correcto");
+  else
+    Serial.println("Error en COMANDO AT+CGATT");
+}
+
+////////////////////////////////////////////////////////////////////////
+
+
+
+
+boolean enviarDatoWIFI(int temperatura, int humedad, int amoniaco)
 {
-  String temp=String(temperatura);
-  String hume=String (humedad);
+  String temp = String(temperatura);
+  Serial.println(temp);
+  String hume = String (humedad);
+  Serial.println(hume);
   String amon = String(amoniaco);
-  String peticion = "GET http://tepremiapp.com/sensor/datos.php?temperatura="+temp+"&humedad="+hume+"&amoniaco="+amon;
+  Serial.println(amon);
+  String peticion = "GET http://tepremiapp.com/sensor/datos.php?temperatura=" + temp + "&humedad=" + hume + "&amoniaco=" + amon;
   int longitud = peticion.length() + 23;
   Serial.println(longitud);
 
@@ -69,10 +200,16 @@ void enviarDato(int temperatura,int humedad, int amoniaco)
   BT1.setTimeout(500);
   BT1.println("Host:www.tepremiapp.com");
   Serial.println("se envio la peticion");
+   delay(3000);
   if (BT1.find("+IPD,")) {
     Serial.println("Datos almacenados");
+    retorno = true;
+  }
+  else {
+    Serial.println("No se almacenaron datos");
   }
   delay(1000);
+  return retorno;
 }
 
 void conexionServer() {
@@ -84,11 +221,9 @@ void conexionServer() {
     Serial.println("Error al conectarse al servidor");
 }
 
-
 int sensormq135() {
   pinsensormq135 = analogRead(0);
   //Serial.print(pinsensormq135, DEC);
-  Serial.print(" ppm");
   delay(250);
 
   //gas propano y butano
