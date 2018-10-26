@@ -43,7 +43,7 @@ void loop()
   int temperatura = calcularTemperatura();
   int humedad = CalcularHumedad();
   enviarDatowifi(temperatura, humedad, amoniaco);
-  mensaje_sms(temperatura, humedad, amoniaco);
+//  mensaje_sms(temperatura, humedad, amoniaco);
   enviardatosSIM();
 
   delay(60000);
@@ -73,7 +73,7 @@ void conectarwifi() {
   BT1.setTimeout(2000);
   BT1.println("AT");
   delay(3000);
-  BT1.println("AT+CWJAP=\"Movistar_22160435\",\"00929329818\"");
+  BT1.println("AT+CWJAP=\"Movistar_22162734\",\"00929330332\"");
   BT1.setTimeout(10000);
 }
 
