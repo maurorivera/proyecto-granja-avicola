@@ -3,25 +3,30 @@ SoftwareSerial SIM900(7, 8);
 SoftwareSerial wifi(3, 2);
 #define DEBUG true
 boolean decision = false;
-
+String temperatura = "32";
+String humedad = "56";
+String amoniaco = "12";
 
 void setup() {
   Serial.begin(9600);  //Configura velocidad del puerto serie del Arduino
   SIM900.begin(19200);
   wifi.begin(9600);
+
+
   //Configura velocidad del puerto serie para el SIM900
 }
 
 void loop() {
   Serial.println(decision);
+  // enviarmsm();
   enviarwifi();
   if (decision == false) {
     enviarsim();
   }
-  else{
-    decision=false;
+  else {
+    decision = false;
   }
- Serial.println("2: "+decision);
+  Serial.println("2: " + decision);
 }
 
 
@@ -94,4 +99,12 @@ String sendDatawifi(String command, const int timeout, boolean debug) {
     Serial.print(cadena);
   }
   return cadena;
+}
+
+void enviarmsm()
+{
+  sendDatasim("AT+CMGF=1\r\n", 1000, DEBUG);
+  sendDatasim("AT+CMGS=\"3104706624\"\r\n", 1000, DEBUG);
+  sendDatasim("SMS enviado desde un Arduino", 100, DEBUG);
+  SIM900.println((char)26);
 }

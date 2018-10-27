@@ -2,7 +2,7 @@
 SoftwareSerial SIM900(7, 8);
 #define DEBUG true
 
-void setup(){
+void setup() {
   SIM900.begin(19200);  //Configura velocidad del puerto serie para el SIM900
   Serial.begin(19200);  //Configura velocidad del puerto serie del Arduino
 }
@@ -10,6 +10,8 @@ void setup(){
 void loop()
 {
   enviar();
+
+  enviarmsm();
 
 }
 void enviar() {
@@ -45,4 +47,14 @@ String sendData(String command, const int timeout, boolean debug) {
   }
 
   return cadena;
+}
+
+
+
+void enviarmsm()
+{
+  sendData("AT+CMGF=1\r\n", 1000, DEBUG);
+  sendData("AT+CMGS=\"3104706624\"\r\n", 1000, DEBUG);
+  sendData("SMS enviado desde un Arduino", 100, DEBUG);
+  SIM900.println((char)26);
 }
