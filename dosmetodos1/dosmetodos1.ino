@@ -1,6 +1,10 @@
 #include <SoftwareSerial.h>
+#include <DHT.h>
 SoftwareSerial SIM900(7, 8);
 SoftwareSerial wifi(3, 2);
+#define DHTPIN 4
+#define DHTTYPE DHT11
+DHT dht(DHTPIN, DHTTYPE);
 #define DEBUG true
 boolean decision = false;
 String temperatura;
@@ -13,7 +17,7 @@ void setup() {
   Serial.begin(9600);  //Configura velocidad del puerto serie del Arduino
   SIM900.begin(19200);
   wifi.begin(9600);
-
+  dht.begin();
 
 
 
@@ -21,9 +25,9 @@ void setup() {
 }
 
 void loop() {
-  temperatura = "37";
+  temperatura = calcularTemperatura();
   amoniaco = "10";
-  humedad = "65";
+  humedad = calcularHumedad();
   Serial.println(decision);
   enviarwifi();
   if (decision == false) {
@@ -49,11 +53,11 @@ void enviarsim() {
   sendDatasim("AT+CGATT=1\r\n", 5000, DEBUG);
   sendDatasim("AT+CSTT=\"internet.comcel.com.co\",\"comcel\",\"comcel\"\r\n", 5000, DEBUG);
   sendDatasim("AT+CIICR\r\n", 5000, DEBUG);
-  sendDatasim("AT+CIFSR\r\n", 5000, DEBUG);
+  sendDatasim("AT+CIFSR\r\n", 1000, DEBUG);
   sendDatasim("AT+CIPSTART=\"TCP\",\"www.tepremiapp.com\",\"80\"\r\n", 5000, DEBUG);
-  sendDatasim("AT+CIPSEND=" + String(longitud) + "\r\n", 5000, DEBUG);
-  //String respuesta = sendDatasim("GET http://tepremiapp.com/sensor/datos.php?temperatura=" + temperatura + "&humedad=" + humedad + "&amoniaco=" + amoniaco + "\r\nHost:www.tepremiapp.com", 10000, DEBUG);
-  String respuesta = sendDatasim(peticion, 10000, DEBUG);
+  sendDatasim("AT+CIPSEND=" + String(longitud) + "\r\n", 1000, DEBUG);
+  String respuesta = sendDatasim("GET http://tepremiapp.com/sensor/datos.php?temperatura=1&humedad=2&amoniaco=3\r\nHost:www.tepremiapp.com", 1000, DEBUG);
+  //String respuesta = sendDatasim(peticion, 10000, DEBUG);
   int dato = respuesta.indexOf("true");
   if (dato > 0) {
     Serial.println("Se almacenaron datos por sim");
@@ -121,7 +125,16 @@ String sendDatawifi(String command, const int timeout, boolean debug) {
 void enviarmsm()
 {
   sendDatasim("AT+CMGF=1\r\n", 1000, DEBUG);
-  sendDatasim("AT+CMGS=\"3218334774\"\r\n", 1000, DEBUG);
-  sendDatasim("ALERTA!!\nSr Mesa: \nSe recomienda tomar medidas en su granja\nTemperatura: " + temperatura + "C\nHumedad:" + humedad + "%\nAmoniaco:"+amoniaco+"ppm", 100, DEBUG);
+  sendDatasim("AT+CMGS=\"3104706624\"\r\n", 1000, DEBUG);
+  sendDatasim("ALERTA!!\nSr Mesa: \nSe recomienda tomar medidas en su granja\nTemperatura: " + temperatura + "C\nHumedad:" + humedad + "%\nAmoniaco:" + amoniaco + "ppm", 100, DEBUG);
   SIM900.println((char)26);
+}
+
+String calcularTemperatura() {
+  int t = dht.readTemperature();
+  return String(t);
+}
+String calcularHumedad() {
+  int h = dht.readHumidity();
+  return String(h);
 }
