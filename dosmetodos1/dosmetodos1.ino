@@ -26,7 +26,7 @@ void setup() {
 
 void loop() {
   temperatura = calcularTemperatura();
-  amoniaco = "10";
+  amoniaco = calcularAmoniaco();
   humedad = calcularHumedad();
   Serial.println(decision);
   enviarwifi();
@@ -36,11 +36,11 @@ void loop() {
   else {
     decision = false;
   }
-
-  if (temperatura.toInt() > 35 || amoniaco.toInt() > 10 || humedad.toInt() > 60) {
-    enviarmsm();
-  }
-
+  /*
+    if (temperatura.toInt() > 35 || amoniaco.toInt() > 10 || humedad.toInt() > 60) {
+      enviarmsm();
+    }
+  */
 
   Serial.println("2: " + decision);
 }
@@ -137,4 +137,13 @@ String calcularTemperatura() {
 String calcularHumedad() {
   int h = dht.readHumidity();
   return String(h);
+}
+
+String calcularAmoniaco() {
+  int pinsensormq135 = analogRead(0);
+  float mq135_voltaje = pinsensormq135 * (5.0 / 1023.0);
+  float mq135_resistencia = 1000 * ((5 - mq135_voltaje) / mq135_voltaje);
+  double amoniaco = 161.7 * pow(mq135_resistencia / 5463, -2.26);
+  return String(amoniaco);
+
 }
