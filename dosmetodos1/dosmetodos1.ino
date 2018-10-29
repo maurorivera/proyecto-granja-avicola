@@ -141,9 +141,6 @@ String calcularHumedad() {
 
 String calcularAmoniaco() {
   int pinsensormq135 = analogRead(0);
-  float mq135_voltaje = pinsensormq135 * (5.0 / 1023.0);
-  float mq135_resistencia = 1000 * ((5 - mq135_voltaje) / mq135_voltaje);
-  double amoniaco = 161.7 * pow(mq135_resistencia / 5463, -2.26);
-  return String(amoniaco);
+  return String(pinsensormq135);
 
 }
