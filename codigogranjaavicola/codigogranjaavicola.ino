@@ -36,18 +36,15 @@ void loop() {
   else {
     decision = false;
   }
-  /*
-    if (temperatura.toInt() > 35 || amoniaco.toInt() > 10 || humedad.toInt() > 60) {
+    if (temperatura.toInt() > 31 || amoniaco.toInt() > 600 || humedad.toInt() > 75) {
       enviarmsm();
     }
-  */
-
-  Serial.println("2: " + decision);
+  delay(60000);
 }
 
 
 void enviarsim() {
-  String peticion = "GET http://tepremiapp.com/sensor/datos.php?temperatura=" + temperatura + "&humedad=" + humedad + "&amoniaco=" + amoniaco + "\r\nHost:www.tepremiapp.com";
+  String peticion = "GET http://tepremiapp.com/granja/datos.php?temperatura=" + temperatura + "&humedad=" + humedad + "&amoniaco=" + amoniaco + "\r\nHost:www.tepremiapp.com";
   int longitud = peticion.length();
   sendDatasim("AT\r\n", 5000, DEBUG);
   sendDatasim("AT+CGATT=1\r\n", 5000, DEBUG);
@@ -56,8 +53,7 @@ void enviarsim() {
   sendDatasim("AT+CIFSR\r\n", 1000, DEBUG);
   sendDatasim("AT+CIPSTART=\"TCP\",\"www.tepremiapp.com\",\"80\"\r\n", 5000, DEBUG);
   sendDatasim("AT+CIPSEND=" + String(longitud) + "\r\n", 1000, DEBUG);
-  String respuesta = sendDatasim("GET http://tepremiapp.com/sensor/datos.php?temperatura=1&humedad=2&amoniaco=3\r\nHost:www.tepremiapp.com", 1000, DEBUG);
-  //String respuesta = sendDatasim(peticion, 10000, DEBUG);
+  String respuesta = sendDatasim(peticion, 10000, DEBUG);
   int dato = respuesta.indexOf("true");
   if (dato > 0) {
     Serial.println("Se almacenaron datos por sim");
@@ -86,10 +82,10 @@ String sendDatasim(String command, const int timeout, boolean debug) {
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 void enviarwifi() {
-  String peticion = "GET http://tepremiapp.com/sensor/datos.php?temperatura=" + temperatura + "&humedad=" + humedad + "&amoniaco=" + amoniaco + "\r\nHost:www.tepremiapp.com";
+  String peticion = "GET http://tepremiapp.com/granja/datos.php?temperatura=" + temperatura + "&humedad=" + humedad + "&amoniaco=" + amoniaco + "\r\nHost:www.tepremiapp.com";
   int longitud = peticion.length();
   sendDatawifi("AT+RST\r\n", 10000, DEBUG);
-  sendDatawifi("AT+CWJAP=\"Movistar_22160435\",\"00929329818\"\r\n", 10000, DEBUG);
+  sendDatawifi("AT+CWJAP=\"Movistar_22162734\",\"00929330332\"\r\n", 10000, DEBUG);
   sendDatawifi("AT+CIPSTART=\"TCP\",\"107.180.50.184\",80\r\n", 5000, DEBUG);
   sendDatawifi("AT+CIPSEND=" + String(longitud) + "\r\n", 1000, DEBUG);
   String respuesta1 = sendDatawifi(peticion, 3000, DEBUG);
